@@ -1,16 +1,17 @@
 name: 🌍 Terraform Infrastructure Pipeline
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-  pull_request:
+  push:
     branches:
       - main
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
 
 env:
   AWS_REGION: us-east-1
@@ -19,8 +20,8 @@ env:
   ROLE_TO_ASSUME: arn:aws:iam::661539128717:role/GitHubOIDC-ECRPushRole
 
 jobs:
-  terraform:
-    name: 🧱 Terraform Plan & Apply
+  terraform-plan:
+    name: 🧩 Terraform Plan
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,15 +51,61 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: terraform plan -input=false -no-color -out=tfplan
-        continue-on-error: true
 
-      - name: Upload Plan Output
-        if: failure() || success()
+      - name: Comment Plan Output on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('${{ env.TF_WORKING_DIR }}/tfplan', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### 🧾 Terraform Plan Result\n\`\`\`\n${planOutput}\n\`\`\``
+            });
+
+      - name: Upload Plan for Apply Job
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}/tfplan
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  terraform-apply:
+    name: ✅ Terraform Apply (Manual Approval)
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Apply (Manual Approval)
         run: terraform apply -input=false -auto-approve tfplan
