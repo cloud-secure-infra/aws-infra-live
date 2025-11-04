@@ -9,6 +9,25 @@ variable "environment" {
 }
 
 variable "github_repo" {
-  description = "List of GitHub repositories allowed to assume the OIDC role"
-  type        = list(string)
+  description = "GitHub repository in org/repo format for OIDC trust"
+  type        = string
+}
+
+variable "owner" {
+  description = "Owner or responsible person/team for this resource"
+  type        = string
+}
+
+variable "cost_center" {
+  description = "Cost center or billing tag for governance"
+  type        = string
+}
+
+variable "governance_tags" {
+  description = "Map of standard governance tags applied to all resources"
+  type        = map(string)
+  default = {
+    ManagedBy   = "Terraform"
+    Compliance  = "CIS-Benchmark"
+  }
 }
