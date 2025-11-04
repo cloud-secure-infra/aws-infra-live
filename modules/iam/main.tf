@@ -1,15 +1,16 @@
-# ===========================================
-# IAM Module — Shared GitHub OIDC Role for All Pipelines
-# ===========================================
+# =========================================================
+# IAM Module — GitHub OIDC Trust + Full Admin (Demo Purpose)
+# =========================================================
 
-# Fetch existing GitHub OIDC Provider
+# --- Fetch GitHub OIDC Provider ---
 data "aws_iam_openid_connect_provider" "github" {
   arn = "arn:aws:iam::661539128717:oidc-provider/token.actions.githubusercontent.com"
 }
 
-# Define OIDC trust policy for multiple GitHub repos
+# --- Create Dynamic Assume Role Policy for Multiple GitHub Repos ---
 data "aws_iam_policy_document" "github_oidc_assume" {
   statement {
+    sid    = "GitHubOIDCTrust"
     effect = "Allow"
 
     principals {
@@ -19,13 +20,11 @@ data "aws_iam_policy_document" "github_oidc_assume" {
 
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
+    # Trust both repos dynamically
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        "repo:cloud-secure-infra/aws-infra-live:*",
-        "repo:os-hardening-factory/os-hardening-factory:*"
-      ]
+      values   = [for repo in var.github_repo : "repo:${repo}:*"]
     }
 
     condition {
@@ -36,9 +35,9 @@ data "aws_iam_policy_document" "github_oidc_assume" {
   }
 }
 
-# Shared OIDC IAM role for Terraform + Docker builds
+# --- IAM Role for GitHub Actions (Shared Across Repos) ---
 resource "aws_iam_role" "github_oidc_role" {
-  name               = "GitHubOIDC-SharedDemoRole"
+  name               = "GitHubOIDC-ECRPushRole"
   assume_role_policy = data.aws_iam_policy_document.github_oidc_assume.json
 
   tags = {
@@ -48,7 +47,7 @@ resource "aws_iam_role" "github_oidc_role" {
   }
 }
 
-# Full admin permissions (demo only — remove in production)
+# --- Full Access Policy (Demo Only — Replace in Prod) ---
 resource "aws_iam_role_policy" "github_oidc_full_access" {
   name = "GitHubOIDC-FullAccess"
   role = aws_iam_role.github_oidc_role.id
@@ -57,7 +56,7 @@ resource "aws_iam_role_policy" "github_oidc_full_access" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "FullAccessDemo"
+        Sid      = "FullAccess"
         Effect   = "Allow"
         Action   = "*"
         Resource = "*"
