@@ -2,12 +2,10 @@
 # IAM Module - GitHub OIDC Trust + Full Access (Demo)
 # ===========================================
 
-# Fetch existing GitHub OIDC Provider
 data "aws_iam_openid_connect_provider" "github" {
   arn = "arn:aws:iam::661539128717:oidc-provider/token.actions.githubusercontent.com"
 }
 
-# Build the OIDC trust relationship dynamically
 data "aws_iam_policy_document" "github_oidc_assume" {
   statement {
     effect = "Allow"
@@ -22,7 +20,7 @@ data "aws_iam_policy_document" "github_oidc_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      values   = ["repo:os-hardening-factory/os-hardening-factory:*"]
     }
 
     condition {
@@ -33,9 +31,6 @@ data "aws_iam_policy_document" "github_oidc_assume" {
   }
 }
 
-# -------------------------------------------
-# Create IAM Role for GitHub OIDC Workflows
-# -------------------------------------------
 resource "aws_iam_role" "github_oidc_role" {
   name               = "GitHubOIDC-ECRPushRole"
   assume_role_policy = data.aws_iam_policy_document.github_oidc_assume.json
@@ -47,10 +42,8 @@ resource "aws_iam_role" "github_oidc_role" {
   }
 }
 
-# -------------------------------------------
-# Attach Full Admin Policy (Demo Purpose Only)
-# -------------------------------------------
-resource "aws_iam_role_policy" "github_oidc_admin_policy" {
+# Grant full access for demo (can tighten later)
+resource "aws_iam_role_policy" "github_oidc_full_access" {
   name = "GitHubOIDC-FullAccess"
   role = aws_iam_role.github_oidc_role.id
 
@@ -65,28 +58,3 @@ resource "aws_iam_role_policy" "github_oidc_admin_policy" {
     ]
   })
 }
-
-# Grant full IAM + ECR permissions for demo pipelines
-resource "aws_iam_role_policy" "ecr_push_policy" {
-  name = "ECRPushPolicy"
-  role = aws_iam_role.github_oidc_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid      = "FullECRAccess"
-        Effect   = "Allow"
-        Action   = [
-          "ecr:*",
-          "iam:*",
-          "sts:*",
-          "logs:*",
-          "cloudwatch:*"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
