@@ -23,8 +23,14 @@ provider "aws" {
 
 module "os_hardened_ecr" {
   source      = "./modules/ecr"
-  project     = "os-hardening-factory"
+  project     = var.project
   environment = var.environment
+  owner       = var.owner
+  cost_center = var.cost_center
+  governance_tags = {
+    ManagedBy  = "Terraform"
+    Compliance = "CIS-Baseline"
+  }
 }
 
 #############################################
@@ -33,7 +39,26 @@ module "os_hardened_ecr" {
 
 module "github_oidc_role" {
   source      = "./modules/iam"
-  project     = "os-hardening-factory"
+  project     = var.project
   environment = var.environment
   github_repo = var.github_repo
+  owner       = var.owner
+  cost_center = var.cost_center
+}
+
+#############################################
+# S3 Module - Image Metadata & Governance Store
+#############################################
+
+module "image_metadata_s3" {
+  source      = "./modules/s3"
+  project     = var.project
+  environment = var.environment
+  owner       = var.owner
+  cost_center = var.cost_center
+
+  governance_tags = {
+    ManagedBy  = "Terraform"
+    Compliance = "CIS-Benchmark"
+  }
 }

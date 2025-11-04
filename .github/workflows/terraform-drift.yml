@@ -1,0 +1,64 @@
+name: "Terraform Drift Detection"
+
+on:
+  schedule:
+    # Runs every Monday at 09:00 AM IST
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.8.5
+  ROLE_TO_ASSUME: arn:aws:iam::661539128717:role/GitHubOIDC-ECRPushRole
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  drift-detection:
+    name: "Detect Terraform Drift"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan (Drift Detection)
+        id: plan
+        run: terraform plan -detailed-exitcode -no-color || echo $? > tf_exit_code.txt
+
+      - name: Upload Plan Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-drift-plan
+          path: tf_exit_code.txt
+
+      - name: Check for Drift
+        run: |
+          CODE=$(cat tf_exit_code.txt || echo 0)
+          if [ "$CODE" -eq 2 ]; then
+            echo "⚠️ Drift detected in Terraform-managed resources!"
+            exit 1
+          else
+            echo "✅ No drift detected!"
+          fi
