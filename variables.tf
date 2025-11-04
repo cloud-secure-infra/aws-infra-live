@@ -14,8 +14,9 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "github_repo" {
-  description = "GitHub repository in org/repo format for OIDC trust"
+
+variable "project" {
+  description = "Project name for tagging and identification"
   type        = string
-  default     = "os-hardening-factory/os-hardening-factory"
+  default     = "cloud-secure-infra"
 }

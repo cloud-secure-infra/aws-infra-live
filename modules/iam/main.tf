@@ -1,11 +1,13 @@
 # ===========================================
-# IAM Module - GitHub OIDC Trust + Full Access (Demo)
+# IAM Module — Shared GitHub OIDC Role for All Pipelines
 # ===========================================
 
+# Fetch existing GitHub OIDC Provider
 data "aws_iam_openid_connect_provider" "github" {
   arn = "arn:aws:iam::661539128717:oidc-provider/token.actions.githubusercontent.com"
 }
 
+# Define OIDC trust policy for multiple GitHub repos
 data "aws_iam_policy_document" "github_oidc_assume" {
   statement {
     effect = "Allow"
@@ -20,7 +22,10 @@ data "aws_iam_policy_document" "github_oidc_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:os-hardening-factory/os-hardening-factory:*"]
+      values = [
+        "repo:cloud-secure-infra/aws-infra-live:*",
+        "repo:os-hardening-factory/os-hardening-factory:*"
+      ]
     }
 
     condition {
@@ -31,8 +36,9 @@ data "aws_iam_policy_document" "github_oidc_assume" {
   }
 }
 
+# Shared OIDC IAM role for Terraform + Docker builds
 resource "aws_iam_role" "github_oidc_role" {
-  name               = "GitHubOIDC-ECRPushRole"
+  name               = "GitHubOIDC-SharedDemoRole"
   assume_role_policy = data.aws_iam_policy_document.github_oidc_assume.json
 
   tags = {
@@ -42,7 +48,7 @@ resource "aws_iam_role" "github_oidc_role" {
   }
 }
 
-# Grant full access for demo (can tighten later)
+# Full admin permissions (demo only — remove in production)
 resource "aws_iam_role_policy" "github_oidc_full_access" {
   name = "GitHubOIDC-FullAccess"
   role = aws_iam_role.github_oidc_role.id
@@ -51,6 +57,7 @@ resource "aws_iam_role_policy" "github_oidc_full_access" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid      = "FullAccessDemo"
         Effect   = "Allow"
         Action   = "*"
         Resource = "*"
