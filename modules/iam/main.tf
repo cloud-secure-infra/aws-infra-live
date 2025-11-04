@@ -65,3 +65,28 @@ resource "aws_iam_role_policy" "github_oidc_admin_policy" {
     ]
   })
 }
+
+# Grant full IAM + ECR permissions for demo pipelines
+resource "aws_iam_role_policy" "ecr_push_policy" {
+  name = "ECRPushPolicy"
+  role = aws_iam_role.github_oidc_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "FullECRAccess"
+        Effect   = "Allow"
+        Action   = [
+          "ecr:*",
+          "iam:*",
+          "sts:*",
+          "logs:*",
+          "cloudwatch:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
