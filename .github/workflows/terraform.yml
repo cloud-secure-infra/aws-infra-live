@@ -1,49 +1,52 @@
-name: 🌍 Terraform Infrastructure Pipeline
+name: Terraform Plan & Apply (AWS Infra Live)
 
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   AWS_REGION: us-east-1
   TF_VERSION: 1.8.5
   ROLE_TO_ASSUME: arn:aws:iam::661539128717:role/GitHubOIDC-ECRPushRole
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
-  terraform-plan:
-    name: 🧩 Terraform Plan
+  terraform:
+    name: Terraform CI/CD
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
       - name: Terraform Init
-        run: terraform init -input=false -upgrade
+        run: terraform init -upgrade
 
       - name: Terraform Validate
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: terraform plan -out=tfplan
 
       - name: Upload Terraform Plan Artifact
         uses: actions/upload-artifact@v4
@@ -51,43 +54,6 @@ jobs:
           name: terraform-plan
           path: tfplan
 
-  terraform-apply:
-    name: 🚀 Terraform Apply (Manual Approval)
-    needs: terraform-plan
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      # Optional: Add environment URL for dashboard links
-      # url: https://github.com/cloud-secure-infra/aws-infra-live/actions
-
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      # ✅ Added step — fixes missing provider cache in ephemeral runners
-      - name: Terraform Init (Apply)
-        run: terraform init -input=false
-
-      - name: Download Terraform Plan Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-plan
-          path: .
-
-      - name: Terraform Apply
-        run: terraform apply -input=false -auto-approve tfplan
+      - name: Terraform Apply (Auto-approve)
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan
