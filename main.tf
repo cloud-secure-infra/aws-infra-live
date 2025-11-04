@@ -1,5 +1,10 @@
+#############################################
+# Root Terraform Configuration
+#############################################
+
 terraform {
   required_version = ">= 1.5.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -9,25 +14,26 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = var.aws_region
 }
 
-# Example: ECR repo for hardened images
-module "ecr" {
-  source = "./modules/ecr"
-}
+#############################################
+# ECR Module - OS Hardening Factory
+#############################################
 
-# Include the ECR module to provision repository
 module "os_hardened_ecr" {
-  source = "./modules/ecr"
+  source      = "./modules/ecr"
+  project     = "os-hardening-factory"
+  environment = var.environment
 }
 
-output "os_hardened_ecr_url" {
-  value = module.os_hardened_ecr.ecr_repository_url
-}
+#############################################
+# IAM Role Module - GitHub OIDC Integration
+#############################################
 
-# IAM role for GitHub OIDC trust (used by os-hardening-factory pipelines)
 module "github_oidc_role" {
-  source = "./modules/iam"
+  source      = "./modules/iam"
+  project     = "os-hardening-factory"
+  environment = var.environment
+  github_repo = var.github_repo
 }
-
