@@ -37,7 +37,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Init
-        run: terraform init -input=false -migrate-state -upgrade
+        run: terraform init -input=false -upgrade
 
       - name: Terraform Validate
         run: terraform validate
