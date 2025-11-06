@@ -62,3 +62,9 @@ module "image_metadata_s3" {
     Compliance = "CIS-Benchmark"
   }
 }
+
+module "kms" {
+  source                  = "./modules/kms"
+  github_actions_role_arn = "arn:aws:iam::661539128717:role/GitHubActionsFactoryRole"
+}
+
