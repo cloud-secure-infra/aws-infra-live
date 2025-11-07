@@ -1,0 +1,9 @@
+{
+  "id": "test-001",
+  "timestamp": "2025-11-07T15:00:00Z",
+  "compliance_status": "PASS",
+  "details": {
+    "benchmark": "CIS Level 1",
+    "os_version": "Amazon Linux 2"
+  }
+}

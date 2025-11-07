@@ -1,0 +1,10 @@
+{
+  "id": "test-002",
+  "timestamp": "2025-11-07T15:45:00Z",
+  "compliance_status": "FAIL",
+  "details": {
+    "benchmark": "CIS Level 2",
+    "os_version": "Amazon Linux 2023",
+    "reason": "SSH root login enabled"
+  }
+}

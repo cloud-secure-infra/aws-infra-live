@@ -23,3 +23,8 @@ variable "governance_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "region" {
+  description = "AWS region where the S3 bucket will be created"
+  type        = string
+}

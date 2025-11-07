@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "eventVersion": "2.1",
+      "eventSource": "aws:s3",
+      "awsRegion": "ap-south-1",
+      "eventTime": "2025-11-07T14:50:00.000Z",
+      "eventName": "ObjectCreated:Put",
+      "s3": {
+        "bucket": {
+          "name": "cloud-secure-infra-dev-image-metadata-ap-south-1"
+        },
+        "object": {
+          "key": "test_compliance.json"
+        }
+      }
+    }
+  ]
+}
+
