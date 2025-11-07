@@ -27,7 +27,7 @@ variable "governance_tags" {
   description = "Map of standard governance tags applied to all resources"
   type        = map(string)
   default = {
-    ManagedBy   = "Terraform"
-    Compliance  = "CIS-Benchmark"
+    ManagedBy  = "Terraform"
+    Compliance = "CIS-Benchmark"
   }
 }

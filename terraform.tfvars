@@ -2,7 +2,7 @@
 # Terraform Variables — Governance, Tagging, and Metadata
 # ============================================================
 
-aws_region  = "us-east-1"
+region      = "ap-south-1"
 environment = "dev"
 
 # Governance & Tagging

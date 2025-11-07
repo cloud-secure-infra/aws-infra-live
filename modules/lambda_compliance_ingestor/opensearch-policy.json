@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::661539128717:role/cloud-secure-infra-lambda-execution-role"
+      },
+      "Action": "es:*",
+      "Resource": "arn:aws:es:ap-south-1:661539128717:domain/infraos-dev/*"
+    },
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "es:*",
+      "Resource": "*"
+    }
+  ]
+}

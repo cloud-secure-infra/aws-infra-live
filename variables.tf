@@ -1,6 +1,7 @@
-variable "aws_region" {
-  description = "AWS region where resources are deployed"
+variable "region" {
+  description = "Default AWS region"
   type        = string
+  default     = "ap-south-1"
 }
 
 variable "environment" {
@@ -41,4 +42,10 @@ variable "governance_tags" {
     ManagedBy  = "Terraform"
     Compliance = "CIS-Benchmark"
   }
+}
+
+variable "aws_region" {
+  description = "AWS region to deploy all resources"
+  type        = string
+  default     = "ap-south-1"
 }

@@ -7,3 +7,4 @@ output "metadata_bucket_arn" {
   description = "ARN of the image metadata bucket"
   value       = aws_s3_bucket.image_metadata.arn
 }
+

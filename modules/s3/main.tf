@@ -3,7 +3,7 @@
 #############################################
 
 resource "aws_s3_bucket" "image_metadata" {
-  bucket = "${var.project}-${var.environment}-image-metadata"
+  bucket = "cloud-secure-infra-dev-image-metadata-ap-south-1"
 
   tags = merge(
     var.governance_tags,
@@ -48,3 +48,34 @@ resource "aws_s3_bucket_public_access_block" "block_public_access" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+resource "aws_s3_bucket_policy" "athena_quicksight_access" {
+  bucket = aws_s3_bucket.image_metadata.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowAthenaAccess"
+        Effect = "Allow"
+        Principal = {
+          Service = [
+            "athena.amazonaws.com",
+            "quicksight.amazonaws.com"
+          ]
+        }
+        Action = [
+          "s3:GetBucketLocation",
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.image_metadata.arn}",
+          "${aws_s3_bucket.image_metadata.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
