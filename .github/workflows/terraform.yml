@@ -1,13 +1,6 @@
 name: Terraform Plan & Apply (AWS Infra Live)
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
 
 permissions:
   id-token: write
